@@ -1,0 +1,16 @@
+{
+  "name": "Credencial Digital",
+  "short_name": "Credencial",
+  "description": "Cursos y acreditaciones del personal con QR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#004478",
+  "theme_color": "#004478",
+  "lang": "es-CL",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

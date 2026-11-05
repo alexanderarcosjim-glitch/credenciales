@@ -1,0 +1,16 @@
+CREDENCIAL DIGITAL — CÓMO PUBLICARLA
+====================================
+Usa el mismo proyecto de Firebase del Pañol Digital (config.js ya viene listo).
+
+1. FIREBASE → Firestore Database → Reglas: reemplaza todo por el contenido de
+   firestore.rules (incluye las reglas del Pañol y las de Credencial) → Publicar.
+2. GITHUB → New repository → nombre: credencial → Public → Create.
+   "uploading an existing file" → arrastra los archivos de esta carpeta
+   (no el .zip, y NUNCA tu Excel de trabajadores) → Commit changes.
+   Settings → Pages → Branch main / (root) → Save.
+   Queda en: https://TU-USUARIO.github.io/credencial/
+3. Abre el enlace → Ingresar (misma cuenta del Pañol) → "Crear y quedar como
+   administrador".
+4. Cursos y usuarios: ajusta los cursos y su vigencia en meses (opcional).
+5. Carga tu Excel, imprime las credenciales (tamaño tarjeta 85,6 x 54 mm)
+   y pruébalas escaneando con la cámara del celular.
