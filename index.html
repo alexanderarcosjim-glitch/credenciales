@@ -450,7 +450,7 @@ function toast(msg){ const o=$(".toast"); if(o) o.remove(); clearTimeout(toastT)
 
 /* ================= Cursos y estado ================= */
 function catalogo(){ const c=S.config.cursos; return Array.isArray(c)&&c.length?c:CURSOS_BASE.map(n=>({id:slug(n),nombre:n,meses:null})); }
-function cursoEstado(rec){ if(!rec||(!rec.aprob&&!rec.vence)) return {code:"no", lbl:"No registrado"};
+function cursoEstado(rec){ if(!rec||(!rec.aprob&&!rec.vence)) return {code:"no", lbl:"No tiene", sub:"No tiene este curso"};
   if(!rec.vence) return {code:"ok", lbl:"Vigente", sub:"Sin vencimiento"};
   const d=daysTo(rec.vence);
   if(d<0) return {code:"venc", lbl:"Vencido", sub:`Venció el ${fmtF(rec.vence)}`};
@@ -473,10 +473,10 @@ function vPublic(){
       <div class="idbody"><span class="avatar">${esc(ini)}</span><div class="idtx"><div class="idname">${esc(p.nombre)}</div><div class="idrole">${esc(p.cargo||"")}</div>
         <div class="idmeta">${[p.empresa,p.cuadrilla].filter(Boolean).map(esc).join(" · ")}${p.rut?`<br>RUT ${esc(p.rut)}`:""}</div></div></div>
     </section>
-    <div class="verdict ${r.ok?"apto":"no"}"><span class="big2">${r.ok?"Cursos al día":r.reg?"Tiene cursos vencidos":"Sin cursos registrados"}</span>
+    <div class="verdict ${r.ok?"apto":"no"}"><span class="big2">${r.ok?"Cursos al día":r.reg?"Tiene cursos vencidos":"No tiene cursos"}</span>
       <span class="why">${r.reg} curso${r.reg===1?"":"s"} registrado${r.reg===1?"":"s"}${r.venc?` · ${r.venc} vencido${r.venc===1?"":"s"}`:""}${r.pronto?` · ${r.pronto} por vencer`:""}</span></div>
     <div class="sec"><h3>Cursos y acreditaciones</h3><div class="list">${cursos.map(c=>{ const e=cursoEstado(c);
-      return `<div class="item crs" style="cursor:default"><span class="cdot ${e.code}"></span><span class="main"><span class="name">${esc(c.nombre)}</span><br><span class="sub">${e.code==="no"?"Sin registro":esc(e.sub||"")}${c.aprob?` · aprobado ${fmtF(c.aprob)}`:""}</span></span><span class="pill ${e.code}">${e.lbl}</span></div>`; }).join("")}</div></div>
+      return `<div class="item crs" style="cursor:default"><span class="cdot ${e.code}"></span><span class="main"><span class="name">${esc(c.nombre)}</span><br><span class="sub">${esc(e.sub||"")}${c.aprob?` · aprobado ${fmtF(c.aprob)}`:""}</span></span><span class="pill ${e.code}">${e.lbl}</span></div>`; }).join("")}</div></div>
     <p class="small muted" style="text-align:center">Información actualizada el ${fmtTs(p.actualizado)}. Consultada el ${new Date().toLocaleDateString("es-CL")} ${new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}.</p>`;
 }
 
@@ -544,8 +544,8 @@ function vTrabajador(){
   const w=workerBy(S.sel); if(!w) return backBar("Trabajador","panel")+`<div class="empty">No se encontró.</div>`;
   const cursos=workerCursos(w), r=resumen(cursos);
   let h=backBar("Credencial","panel")+`<div class="verdict ${r.ok?"apto":"no"}"><span class="big2">${r.ok?"Cursos al día":r.reg?"Tiene cursos vencidos":"Sin cursos"}</span><span class="why">${esc(w.nombre)} · ${r.reg} registrado${r.reg===1?"":"s"}${r.venc?` · ${r.venc} vencido${r.venc===1?"":"s"}`:""}${r.pronto?` · ${r.pronto} por vencer`:""}</span></div>`;
-  h+=`<form class="panel" id="f-cursos"><h2>Cursos</h2><p class="small muted">Ingresa la fecha de aprobación y la de vencimiento. ${catalogo().some(c=>c.meses)?"Si dejas vacío el vencimiento, se calcula con la vigencia configurada.":""}</p>
-    <div class="ctab">${cursos.map(c=>{ const e=cursoEstado(c); return `<div class="crow"><div class="cname"><span class="cdot ${e.code}"></span>${esc(c.nombre)}<span class="pill ${e.code}">${e.lbl}</span></div>
+  h+=`<form class="panel" id="f-cursos"><h2>Cursos</h2><p class="small muted">Ingresa la fecha de aprobación y la de vencimiento. Si no tiene el curso, deja ambas fechas vacías: aparecerá como "No tiene". ${catalogo().some(c=>c.meses)?"Si dejas vacío el vencimiento, se calcula con la vigencia configurada.":""}</p>
+    <div class="ctab">${cursos.map(c=>{ const e=cursoEstado(c); return `<div class="crow"><div class="cname"><span class="cdot ${e.code}"></span>${esc(c.nombre)}<span class="pill ${e.code}">${e.lbl}</span>${e.code!=="no"?`<button class="btn ghost" type="button" style="min-height:32px;padding:4px 8px" data-act="no-tiene" data-id="${esc(c.id)}">No tiene</button>`:""}</div>
       <label class="f">Aprobado<input type="date" id="ap-${esc(c.id)}" value="${esc(c.aprob||"")}"></label><label class="f">Vence<input type="date" id="ve-${esc(c.id)}" value="${esc(c.vence||"")}"></label></div>`; }).join("")}</div>
     <button class="btn pri big" type="submit">Guardar cursos</button></form>`;
   h+=`<div class="panel"><div class="qrbox"><div class="qr" id="qr-w"></div><div class="sec" style="gap:6px;min-width:0"><strong>QR de la credencial</strong><span class="small muted">Al escanearlo con cualquier celular se abre su ficha de cursos.</span>
@@ -571,12 +571,12 @@ function mapRows(aoa){
   const head=aoa[0].map(normH); const idx={}; const used=new Set();
   Object.entries(BASE_COLS).forEach(([k,al])=>{ const i=head.findIndex((h,j)=>!used.has(j)&&al.some(a=>h===a||h.startsWith(a+" ")||h===a)); if(i>=0){ idx[k]=i; used.add(i); } });
   const cursoCols=[]; catalogo().forEach(c=>{ const n=normH(c.nombre); const i=head.findIndex((h,j)=>!used.has(j)&&(h===n||h.includes(n))); if(i>=0){ cursoCols.push({id:c.id,nombre:c.nombre,i}); used.add(i); } });
-  const rows=aoa.slice(1).map(r=>{ const o={}; Object.keys(BASE_COLS).forEach(k=>o[k]=idx[k]!==undefined?clean(r[idx[k]]):""); o.cursos={}; cursoCols.forEach(c=>{ const d=toISO(r[c.i]); if(d) o.cursos[c.id]=d; }); return o; });
+  const rows=aoa.slice(1).map(r=>{ const o={}; Object.keys(BASE_COLS).forEach(k=>o[k]=idx[k]!==undefined?clean(r[idx[k]]):""); o.cursos={}; cursoCols.forEach(c=>{ const raw=clean(r[c.i]); if(/^(no|no tiene|n\/?a|-|x|sin curso)$/i.test(raw)){ o.cursos[c.id]="NO"; return; } const d=toISO(r[c.i]); if(d) o.cursos[c.id]=d; }); return o; });
   return {rows, cols:cursoCols};
 }
 function vImportar(){
   const im=S.imp, cat=catalogo();
-  let h=backBar("Cargar desde Excel","panel")+`<div class="panel"><h2>1. Prepara tu Excel</h2><p class="small muted">Una fila por trabajador. En la primera fila los títulos: datos personales y una columna por curso con la <strong>fecha</strong> (dd-mm-aaaa).</p>
+  let h=backBar("Cargar desde Excel","panel")+`<div class="panel"><h2>1. Prepara tu Excel</h2><p class="small muted">Una fila por trabajador. En la primera fila los títulos: datos personales y una columna por curso con la <strong>fecha</strong> (dd-mm-aaaa). Si no tiene el curso, escribe <strong>NO</strong> o deja la celda vacía.</p>
     <div class="tbl"><table><tr>${["Nombre","RUT","Cargo","Empresa","Cuadrilla",...cat.map(c=>c.nombre)].map(c=>`<th>${esc(c)}</th>`).join("")}</tr></table></div>
     <button class="btn" data-act="plantilla">Descargar plantilla</button></div>
     <div class="panel"><h2>2. ¿Qué fecha tienen las columnas de cursos?</h2><div class="seg"><label><input type="radio" name="modo" id="m-vence" ${im.modo==="vence"?"checked":""}> Fecha de vencimiento</label><label><input type="radio" name="modo" id="m-aprob" ${im.modo==="aprob"?"checked":""}> Fecha de aprobación</label></div>
@@ -585,7 +585,7 @@ function vImportar(){
       <label class="f">O copia las celdas en Excel y pégalas aquí<textarea id="imp-txt" placeholder="Pega aquí, incluyendo la fila de títulos"></textarea></label><button class="btn" data-act="imp-paste">Leer lo pegado</button></div>`;
   if(im.rows){ const rows=im.rows, bad=rows.filter(r=>!r.nombre).length, prev=rows.slice(0,10);
     h+=`<div class="panel"><h2>4. Revisa e importa</h2><p>${rows.length} fila${rows.length===1?"":"s"}${im.name?" de "+esc(im.name):""}. Cursos reconocidos: <strong>${im.cols.length?im.cols.map(c=>esc(c.nombre)).join(", "):"ninguno"}</strong>.${bad?` <strong style="color:var(--bad)">${bad} sin nombre se omitirán.</strong>`:""}</p>
-      <div class="tbl"><table><tr><th>Nombre</th><th>RUT</th><th>Cargo</th>${im.cols.map(c=>`<th>${esc(c.nombre)}</th>`).join("")}</tr>${prev.map(r=>`<tr><td class="${r.nombre?"":"err"}">${esc(r.nombre||"falta")}</td><td>${esc(r.rut)}</td><td>${esc(r.cargo)}</td>${im.cols.map(c=>`<td>${fmtF(r.cursos[c.id])}</td>`).join("")}</tr>`).join("")}</table></div>
+      <div class="tbl"><table><tr><th>Nombre</th><th>RUT</th><th>Cargo</th>${im.cols.map(c=>`<th>${esc(c.nombre)}</th>`).join("")}</tr>${prev.map(r=>`<tr><td class="${r.nombre?"":"err"}">${esc(r.nombre||"falta")}</td><td>${esc(r.rut)}</td><td>${esc(r.cargo)}</td>${im.cols.map(c=>`<td>${r.cursos[c.id]==="NO"?"No tiene":fmtF(r.cursos[c.id])}</td>`).join("")}</tr>`).join("")}</table></div>
       <span class="small muted">Si el trabajador ya existe (mismo RUT o nombre), se actualizan sus datos y cursos; su QR no cambia.</span>
       <button class="btn pri big" data-act="imp-go" ${rows.length-bad?"":"disabled"}>Importar ${rows.length-bad} trabajador${rows.length-bad===1?"":"es"}</button></div>`; }
   return h;
@@ -601,7 +601,7 @@ function doImport(){
     const base=ex?JSON.parse(JSON.stringify(ex)):{nombre:r.nombre,cursos:{},token:token(),creado:Date.now()};
     ["nombre","rut","cargo","empresa","cuadrilla"].forEach(k=>{ if(r[k]) base[k]=r[k]; }); if(!base.empresa&&S.config.empresa) base.empresa=S.config.empresa;
     base.cursos=base.cursos||{};
-    Object.entries(r.cursos).forEach(([cid,d])=>{ const c=cat.find(x=>x.id===cid); const rec=Object.assign({},base.cursos[cid]||{});
+    Object.entries(r.cursos).forEach(([cid,d])=>{ if(d==="NO"){ delete base.cursos[cid]; return; } const c=cat.find(x=>x.id===cid); const rec=Object.assign({},base.cursos[cid]||{});
       if(modo==="vence") rec.vence=d; else { rec.aprob=d; rec.vence=c&&c.meses?addMonths(d,c.meses):(rec.vence||null); } base.cursos[cid]=rec; });
     const id=ex?ex.id:"w"+token().slice(0,12); delete base.id; writes.push([id,base]); });
   for(let i=0;i<writes.length;i+=200){ const chunk=writes.slice(i,i+200); commit(b=>chunk.forEach(([id,d])=>saveWorker(b,id,d))); }
@@ -727,6 +727,7 @@ document.addEventListener("click",e=>{ const b=e.target.closest("[data-act]"); i
     case "plantilla": plantilla(); break;
     case "cat-del": { if(!adminOnly()) break; const i=+b.dataset.i; const cat=catalogo().filter((_,j)=>j!==i); S.config=Object.assign({},S.config,{cursos:cat}); commit(bb=>bb.set(col("config").doc("app"),{cursos:cat},{merge:true}),"Curso quitado. Los registros de ese curso se conservan."); resync(true); S.noReset=true; render(); break; }
     case "resync": resync(false); break;
+    case "no-tiene": { const i=b.dataset.id; $("#ap-"+i).value=""; $("#ve-"+i).value=""; toast("Fechas borradas. Toca \"Guardar cursos\" para confirmar."); break; }
     case "m-del": { const k="mdel:"+b.dataset.uid; if(S.armed===k){ commit(bb=>bb.delete(col("miembros").doc(b.dataset.uid)),"Usuario quitado."); S.armed=null; } else arm(k); break; }
     case "inv-del": { const m=b.dataset.mail; commit(bb=>{ bb.delete(fs.doc(`credInv/${m}`)); bb.delete(col("invitaciones").doc(m)); },"Invitación anulada."); break; }
   }
